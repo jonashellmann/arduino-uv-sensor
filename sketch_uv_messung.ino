@@ -7,6 +7,7 @@
 #define TFT_RST        9 // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC         8
 
+int MED = 300;
 String UV = "0"; 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -84,7 +85,7 @@ void printOnDisplay(int uvIndex) {
     color = 0x07E0; // Grün
     text1 = "Niedrige Belastung";
   }
-  int minutes = 300 / (1.5 * uvIndex);
+  int minutes = MED / (1.5 * uvIndex);
   char strMinutes[12];
   sprintf(strMinutes, "%d", minutes);
   char text2[80];
