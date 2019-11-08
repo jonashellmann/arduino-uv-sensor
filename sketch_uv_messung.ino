@@ -4,10 +4,13 @@
 #include <SPI.h>
 
 #define TFT_CS        10
-#define TFT_RST        9 // Or set to -1 and connect to Arduino RESET pin
+#define TFT_RST        9
 #define TFT_DC         8
 
-int MED = 300;
+int MED = 300; // Individuelle minimale Erythemdosis
+float remainingUvDosis = MED;
+int updateRateSec = 2;
+
 String UV = "0"; 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -22,7 +25,7 @@ void loop() {
   // Sensor auslesen und auf dem Bildschirm anzeigen
   printOnDisplay(readSensor());
   // Zwei Sekunden warten
-  delay(2000);
+  delay(updateRateSec * 1000);
 }
 
 void printWelcomeMessage() {
@@ -62,7 +65,7 @@ void resetDisplay() {
 void printOnDisplay(int uvIndex) {
   resetDisplay();
   printHeading();
-  
+
   int color = 0;
   String text1 = "";
   if (uvIndex >= 11) {
@@ -85,7 +88,8 @@ void printOnDisplay(int uvIndex) {
     color = 0x07E0; // Grün
     text1 = "Niedrige Belastung";
   }
-  int minutes = MED / (1.5 * uvIndex);
+
+  int minutes = calculateRemainingSunSeconds(uvIndex) / 60;
   char strMinutes[12];
   sprintf(strMinutes, "%d", minutes);
   char text2[80];
@@ -96,9 +100,32 @@ void printOnDisplay(int uvIndex) {
     strcpy(text2, "Max. Zeit (min): ");
     strcat(text2, strMinutes);
   }
+
+  int color2 = 0xFFFF; // Weiß
+  if (minutes <= 5) {
+    color2 = 0xF800; // Rot
+  }
+  else if (minutes <= 15) {
+    color2 = 0xFBE0; // Orange
+  }
   
   printValue(uvIndex, color);
-  printText(text1, text2);
+  printText(text1, text2, color2);
+}
+
+float calculateRemainingSunSeconds(int uvIndex) {
+  // Restliche Zeit in der Sonne in Sekunden berechnen über die Formel:
+  // t = Erythemdosis - (1.5 * UV-Index)
+  float remainingSunSec = 0;
+  if (uvIndex > 0) {
+    remainingSunSec = remainingUvDosis / (1.5 * uvIndex);
+    remainingSunSec *= 60;
+  }
+
+  // Restliche Erythemdosis reduzieren um "verbrauchte" Menge im Messintervall
+  remainingUvDosis -= (1.5 * uvIndex) / (60 / updateRateSec);
+
+  return remainingSunSec;
 }
 
 void printHeading() {
@@ -124,13 +151,14 @@ void printValue(int uvIndex, int color) {
   tft.print(uvIndex);
 }
 
-void printText(String text1, String text2) {
+void printText(String text1, String text2, int color) {
   tft.setTextSize(1);
-  tft.setTextColor(0xFFFF); // Weiß
   
+  tft.setTextColor(0xFFFF); // Weiß
   tft.setCursor(3, 110);
   tft.print(text1);
-  
+
+  tft.setTextColor(color);
   tft.setCursor(3, 120);
   tft.print(text2);
 }
@@ -149,47 +177,47 @@ int readSensor()
   if(voltage<50)
   {
     UVIndex = 0;
-  }else if (voltage>50 && voltage<=227)
+  }else if (voltage > 50 && voltage <= 227)
   {
     UVIndex = 0;
-  }else if (voltage>227 && voltage<=318)
+  }else if (voltage > 227 && voltage <= 318)
   {
     UVIndex = 1;
   }
-  else if (voltage>318 && voltage<=408)
+  else if (voltage > 318 && voltage <= 408)
   {
     UVIndex = 2;
-  }else if (voltage>408 && voltage<=503)
+  }else if (voltage > 408 && voltage <= 503)
   {
     UVIndex = 3;
   }
-  else if (voltage>503 && voltage<=606)
+  else if (voltage > 503 && voltage <= 606)
   {
     UVIndex = 4;
-  }else if (voltage>606 && voltage<=696)
+  }else if (voltage > 606 && voltage <= 696)
   {
     UVIndex = 5;
-  }else if (voltage>696 && voltage<=795)
+  }else if (voltage > 696 && voltage <= 795)
   {
     UVIndex = 6;
-  }else if (voltage>795 && voltage<=881)
+  }else if (voltage > 795 && voltage <= 881)
   {
     UVIndex = 7;
   }
-  else if (voltage>881 && voltage<=976)
+  else if (voltage > 881 && voltage <= 976)
   {
     UVIndex = 8;
   }
-  else if (voltage>976 && voltage<=1079)
+  else if (voltage > 976 && voltage <= 1079)
   {
     UVIndex = 9;
   }
-  else if (voltage>1079 && voltage<=1170)
+  else if (voltage > 1079 && voltage <= 1170)
   {
     UVIndex = 10;
-  }else if (voltage>1170)
+  }else if (voltage > 1170)
   {
     UVIndex = 11;
   }
-  return UVIndex;
+  return 10;
 }
