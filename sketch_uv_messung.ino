@@ -3,15 +3,14 @@
 #include <Adafruit_ST7735.h>
 #include <SPI.h>
 
-#define TFT_CS        10
-#define TFT_RST        9
-#define TFT_DC         8
+#define TFT_CS 10
+#define TFT_RST 9
+#define TFT_DC 8
 
 int MED = 300; // Individuelle minimale Erythemdosis
 float remainingUvDosis = MED;
 int updateRateSec = 2;
 
-String UV = "0"; 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 void setup(void) {
@@ -97,7 +96,7 @@ void printOnDisplay(int uvIndex) {
     strcpy(text2, "");
   }
   else {
-    strcpy(text2, "Max. Zeit (min): ");
+    strcpy(text2, "Restzeit (min): ");
     strcat(text2, strMinutes);
   }
 
@@ -219,5 +218,5 @@ int readSensor()
   {
     UVIndex = 11;
   }
-  return 10;
+  return UVIndex;
 }
