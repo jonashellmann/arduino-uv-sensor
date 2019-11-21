@@ -16,8 +16,8 @@ difference() {
     translate([25, 20, 82]) {
         cylinder(h=8, r1=4, r2=4, $fn=100);
     }
-    translate([20, -2, 39]) { 
-        cube([20, 5, 40]);
+    translate([0, -2, 39]) { 
+        #cube([40, 5, 40]);
     }
     
     // Aussparung fuer Display
