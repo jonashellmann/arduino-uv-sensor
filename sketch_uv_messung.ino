@@ -22,7 +22,7 @@ void setup(void) {
 
 void loop() {
   // Sensor auslesen und auf dem Bildschirm anzeigen
-  printOnDisplay(readSensor());
+  printOnDisplay(readSensor(), readVcc());
   // Zwei Sekunden warten
   delay(updateRateSec * 1000);
 }
@@ -61,7 +61,7 @@ void resetDisplay() {
   tft.fillScreen(ST77XX_BLACK);
 }
 
-void printOnDisplay(int uvIndex) {
+void printOnDisplay(int uvIndex, long battery) {
   resetDisplay();
   printHeading();
 
@@ -110,6 +110,7 @@ void printOnDisplay(int uvIndex) {
   
   printValue(uvIndex, color);
   printText(text1, text2, color2);
+  printBattery(battery);
 }
 
 float calculateRemainingSunSeconds(int uvIndex) {
@@ -160,6 +161,36 @@ void printText(String text1, String text2, int color) {
   tft.setTextColor(color);
   tft.setCursor(3, 120);
   tft.print(text2);
+}
+
+void printBattery(long battery) {
+  double curvolt = double(battery) / 1000;
+  int batIndicators = 0;
+  if (curvolt > 4.2) {
+    batIndicators = 8;
+  } else if (curvolt <= 4.2 && curvolt > 4.0) {
+    batIndicators = 7;
+  } else if (curvolt <= 4.0 && curvolt > 3.8) {
+    batIndicators = 6;
+  } else if (curvolt <= 3.8 && curvolt > 3.6) {
+    batIndicators = 5;
+  } else if (curvolt <= 3.6 && curvolt > 3.4) {
+    batIndicators = 4;
+  } else if (curvolt <= 3.4 && curvolt > 3.2) {
+    batIndicators = 3;
+  } else if (curvolt <= 3.2 && curvolt > 3.0) {
+    batIndicators = 2;
+  } else {
+    batIndicators = 1;
+  }
+
+  for (int i = 1; i <= 8; i++) {
+    if (i <= batIndicators) {
+      tft.fillRect(122, 40 + i * 6, 5, 5, 0xFFFF);
+    } else {
+      tft.drawRect(122, 40 + i * 6, 5, 5, 0xFFFF);
+    }
+  }
 }
 
 int readSensor()
@@ -219,4 +250,17 @@ int readSensor()
     UVIndex = 11;
   }
   return UVIndex;
+}
+
+long readVcc() {
+  long result;
+  // Read 1.1V reference against AVcc
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Convert
+  while (bit_is_set(ADCSRA, ADSC));
+  result = ADCL;
+  result |= ADCH << 8;
+  result = 1126400L / result; // Back-calculate AVcc in mV
+  return result;
 }
